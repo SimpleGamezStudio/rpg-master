@@ -5,9 +5,9 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
-const OPENAI_API_KEY = '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';
-const ELEVEN_API_KEY = 'sk_3dd45289f40a86c9fe5a8545aff71f1f933cd0aeb82efd79';
-const ASSISTANT_ID = 'asst_Tj32dGAoXW97HpxgrBiHu3R4';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
+const ASSISTANT_ID = process.env.ASSISTANT_ID || 'asst_Tj32dGAoXW97HpxgrBiHu3R4';
 
 app.use(cors());
 app.use(express.json());
@@ -81,6 +81,8 @@ app.post('/chat', async (req, res) => {
     });
     const messages = await messageRes.json();
 
+    console.log("🧠 Full response from OpenAI:", JSON.stringify(messages, null, 2));
+
     const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
 
     if (!reply) {
@@ -98,7 +100,7 @@ app.post('/chat', async (req, res) => {
 app.post("/tts", async (req, res) => {
   try {
     const { text } = req.body;
-    const voiceId = "h83JI5fjWWu9AOKOVRYh"; // domyślny głos (angielski, możesz zmienić na polski jeśli masz)
+    const voiceId = "h83JI5fjWWu9AOKOVRYh";
 
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
@@ -125,6 +127,11 @@ app.post("/tts", async (req, res) => {
     console.error("TTS server error:", e);
     res.status(500).send("Server error.");
   }
+});
+
+// Optional health check route
+app.get("/ping", (req, res) => {
+  res.send("✅ RPG Game Master is running!");
 });
 
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
