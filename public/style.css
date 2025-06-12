@@ -1,0 +1,53 @@
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #1b1b1b url('https://www.transparenttextures.com/patterns/black-linen.png');
+  color: #f4f4f4;
+  font-family: 'IM Fell English SC', serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  width: 90%;
+  max-width: 800px;
+}
+
+.story-box {
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid #856d4d;
+  padding: 20px;
+  height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 1.2rem;
+}
+
+form {
+  margin-top: 10px;
+  display: flex;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 10px;
+  font-size: 1rem;
+  background: #333;
+  color: #fff;
+  border: none;
+}
+
+button {
+  background-color: #856d4d;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #a67c52;
+}
