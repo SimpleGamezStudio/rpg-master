@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
-const ASSISTANT_ID = process.env.ASSISTANT_ID || 'asst_Tj32dGAoXW97HpxgrBiHu3R4';
+const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
