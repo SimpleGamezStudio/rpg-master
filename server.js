@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
 const ASSISTANT_ID = process.env.ASSISTANT_ID;
+const WIX_ENDPOINT = process.env.WIX_ENDPOINT; // optional Wix endpoint for sending replies
 
 app.use(cors());
 app.use(express.json());
@@ -111,6 +112,18 @@ app.post('/chat', async (req, res) => {
     const filepath = path.join(__dirname, 'public', filename);
     fs.writeFileSync(filepath, buffer);
     const audioUrl = `https://rpg-master.onrender.com/${filename}`;
+
+    if (WIX_ENDPOINT) {
+      try {
+        await fetch(WIX_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: reply, audio: audioUrl })
+        });
+      } catch (err) {
+        console.warn('⚠️ Failed to send data to Wix:', err);
+      }
+    }
 
     res.json({ reply, audio: audioUrl });
   } catch (e) {
