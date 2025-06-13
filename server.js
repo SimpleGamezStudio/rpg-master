@@ -8,11 +8,27 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
 const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
-app.use(cors());
-app.use(express.json());
+// Only allow your Wix site, adjust as needed
+const ALLOWED_ORIGIN = 'https://scanmepoland.wixsite.com/my-site-1'; // <-- CHANGE THIS
+
+app.use(cors({
+  origin: ALLOWED_ORIGIN,
+  credentials: true
+}));
+app.use(express.json({ limit: '2mb' })); // Increase if expecting large payloads
+
+// Handle preflight for /chat
+app.options('/chat', cors({
+  origin: ALLOWED_ORIGIN,
+  credentials: true
+}));
 
 // 🎮 Chat endpoint with text + TTS voice (base64)
 app.post('/chat', async (req, res) => {
+  // Set CORS headers explicitly for all responses
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
   try {
     const userMessage = req.body.message;
     console.log("📥 User message:", userMessage);
@@ -88,10 +104,13 @@ app.post('/chat', async (req, res) => {
     const messages = await messageRes.json();
     const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
 
-    if (!reply) return res.status(500).send("No assistant reply received.");
+    if (!reply) {
+      res.status(500).json({ error: "No assistant reply received.", audio: null });
+      return;
+    }
 
     // 6. Generate TTS using ElevenLabs
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Your preferred voice
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX";
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
@@ -111,19 +130,20 @@ app.post('/chat', async (req, res) => {
     if (!ttsRes.ok) {
       const errText = await ttsRes.text();
       console.error("⚠️ TTS error:", errText);
-      return res.json({ reply, audio: null });
+      res.json({ reply, audio: null });
+      return;
     }
 
     const audioBuffer = await ttsRes.arrayBuffer();
     const buffer = Buffer.from(audioBuffer);
     const base64Audio = `data:audio/mpeg;base64,${buffer.toString("base64")}`;
 
-    // ✅ Send base64 audio to bypass Wix cross-origin issues
     res.json({ reply, audio: base64Audio });
 
   } catch (e) {
     console.error("❌ Chat error:", e);
-    res.status(500).send("Server error.");
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ error: "Server error.", audio: null });
   }
 });
 
