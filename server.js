@@ -12,15 +12,15 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // ✅ Serve audio files
+app.use(express.static('public')); // ✅ Serve mp3 files from /public
 
-// 🎮 Chat endpoint
+// 🎮 Chat endpoint with text + TTS voice
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
     console.log("📥 User message:", userMessage);
 
-    // Create thread
+    // 1. Create new thread
     const threadRes = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
       headers: {
@@ -29,11 +29,10 @@ app.post('/chat', async (req, res) => {
         'OpenAI-Beta': 'assistants=v2'
       }
     });
-
     const threadData = await threadRes.json();
     const threadId = threadData.id;
 
-    // Add system message
+    // 2. Add system message
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
       headers: {
@@ -44,7 +43,7 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({ role: 'system', content: 'Jesteś Mistrzem Gry RPG. Mów tylko po polsku.' })
     });
 
-    // Add user message
+    // 3. Add user message
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
       headers: {
@@ -55,7 +54,7 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({ role: 'user', content: userMessage })
     });
 
-    // Run assistant
+    // 4. Run assistant
     const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: 'POST',
       headers: {
@@ -81,7 +80,7 @@ app.post('/chat', async (req, res) => {
       status = runStatus.status;
     }
 
-    // Get response
+    // 5. Get reply message
     const messageRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -93,20 +92,9 @@ app.post('/chat', async (req, res) => {
     const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
 
     if (!reply) return res.status(500).send("No assistant reply received.");
-    res.json({ reply });
 
-  } catch (e) {
-    console.error("❌ Chat error:", e);
-    res.status(500).send("Server error.");
-  }
-});
-
-// 🔊 TTS endpoint that returns public URL to an .mp3
-app.post('/tts', async (req, res) => {
-  try {
-    const { text } = req.body;
-    const voiceId = "h83JI5fjWWu9AOKOVRYh"; // Change to your desired voice
-
+    // 6. Generate TTS using ElevenLabs
+    const voiceId = "h83JI5fjWWu9AOKOVRYh"; // ✅ Replace with your preferred voice
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
@@ -114,7 +102,7 @@ app.post('/tts', async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        text: text,
+        text: reply,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
           stability: 0.5,
@@ -124,8 +112,9 @@ app.post('/tts', async (req, res) => {
     });
 
     if (!ttsRes.ok) {
-      const err = await ttsRes.text();
-      return res.status(500).json({ error: "TTS Error", details: err });
+      const errText = await ttsRes.text();
+      console.error("⚠️ TTS error:", errText);
+      return res.json({ reply, audio: null }); // Return text even if audio fails
     }
 
     const audioBuffer = await ttsRes.arrayBuffer();
@@ -134,13 +123,14 @@ app.post('/tts', async (req, res) => {
     const filename = `output-${Date.now()}.mp3`;
     const filepath = path.join(__dirname, 'public', filename);
     fs.writeFileSync(filepath, buffer);
+    const audioUrl = `https://rpg-master.onrender.com/${filename}`;
 
-    const url = `https://rpg-master.onrender.com/${filename}`;
-    res.json({ url });
+    // ✅ Respond with both text and audio URL
+    res.json({ reply, audio: audioUrl });
 
   } catch (e) {
-    console.error("❌ TTS error:", e);
-    res.status(500).json({ error: "TTS server error" });
+    console.error("❌ Chat error:", e);
+    res.status(500).send("Server error.");
   }
 });
 
