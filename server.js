@@ -1,8 +1,6 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -12,9 +10,8 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // ✅ Serve mp3 files from /public
 
-// 🎮 Chat endpoint with text + TTS voice
+// 🎮 Chat endpoint with text + TTS voice (base64)
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -94,7 +91,7 @@ app.post('/chat', async (req, res) => {
     if (!reply) return res.status(500).send("No assistant reply received.");
 
     // 6. Generate TTS using ElevenLabs
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // ✅ Replace with your preferred voice
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Your preferred voice
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
@@ -114,19 +111,15 @@ app.post('/chat', async (req, res) => {
     if (!ttsRes.ok) {
       const errText = await ttsRes.text();
       console.error("⚠️ TTS error:", errText);
-      return res.json({ reply, audio: null }); // Return text even if audio fails
+      return res.json({ reply, audio: null });
     }
 
     const audioBuffer = await ttsRes.arrayBuffer();
     const buffer = Buffer.from(audioBuffer);
+    const base64Audio = `data:audio/mpeg;base64,${buffer.toString("base64")}`;
 
-    const filename = `output-${Date.now()}.mp3`;
-    const filepath = path.join(__dirname, 'public', filename);
-    fs.writeFileSync(filepath, buffer);
-    const audioUrl = `https://rpg-master.onrender.com/${filename}`;
-
-    // ✅ Respond with both text and audio URL
-    res.json({ reply, audio: audioUrl });
+    // ✅ Send base64 audio to bypass Wix cross-origin issues
+    res.json({ reply, audio: base64Audio });
 
   } catch (e) {
     console.error("❌ Chat error:", e);
