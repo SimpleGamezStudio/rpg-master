@@ -13,15 +13,12 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // serve audio files
+app.use(express.static('public'));
 
-// 🎮 Chat endpoint (returns only reply text)
+// 🎮 Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
-    console.log("📥 User message:", userMessage);
-
-    // Create a new thread
     const threadRes = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
       headers: {
@@ -30,28 +27,29 @@ app.post('/chat', async (req, res) => {
         'OpenAI-Beta': 'assistants=v2'
       }
     });
-
     const threadId = (await threadRes.json()).id;
 
-    // Add system and user messages
-    const messages = [
-      { role: 'system', content: 'Jesteś Mistrzem Gry RPG. Mów tylko po polsku.' },
-      { role: 'user', content: userMessage }
-    ];
+    // System & user messages
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({ role: 'system', content: 'Jesteś Mistrzem Gry RPG. Mów tylko po polsku.' })
+    });
 
-    for (const msg of messages) {
-      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify(msg)
-      });
-    }
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({ role: 'user', content: userMessage })
+    });
 
-    // Run assistant
     const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: 'POST',
       headers: {
@@ -67,16 +65,16 @@ app.post('/chat', async (req, res) => {
 
     while (status === 'in_progress') {
       await new Promise(r => setTimeout(r, 1500));
-      const statusRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runData.id}`, {
+      const runCheck = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runData.id}`, {
         headers: {
           'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'OpenAI-Beta': 'assistants=v2'
         }
       });
-      status = (await statusRes.json()).status;
+      const runStatus = await runCheck.json();
+      status = runStatus.status;
     }
 
-    // Get reply
     const messageRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -90,21 +88,19 @@ app.post('/chat', async (req, res) => {
     if (!reply) return res.status(500).json({ error: 'No assistant reply' });
 
     res.json({ reply });
-
   } catch (err) {
     console.error("❌ Chat error:", err);
     res.status(500).json({ error: 'Chat server error' });
   }
 });
 
-// 🔊 TTS endpoint (receives text, returns audio URL)
+// 🔊 TTS endpoint
 app.post('/tts', async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'No text provided' });
 
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Replace with your voice ID
-
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Polish voice
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
@@ -123,8 +119,7 @@ app.post('/tts', async (req, res) => {
 
     if (!ttsRes.ok) {
       const errorText = await ttsRes.text();
-      console.error("⚠️ TTS error:", errorText);
-      return res.status(500).json({ error: 'TTS generation failed' });
+      return res.status(500).json({ error: 'TTS failed', details: errorText });
     }
 
     const buffer = Buffer.from(await ttsRes.arrayBuffer());
@@ -133,7 +128,6 @@ app.post('/tts', async (req, res) => {
     fs.writeFileSync(filepath, buffer);
 
     res.json({ audioUrl: `https://rpg-master.onrender.com/${filename}` });
-
   } catch (err) {
     console.error("❌ TTS error:", err);
     res.status(500).json({ error: 'TTS server error' });
