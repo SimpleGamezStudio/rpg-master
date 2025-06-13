@@ -1,6 +1,8 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -10,14 +12,13 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // Serve .mp3 files
 
-// 🎮 Chat endpoint with text + TTS voice (base64)
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
-    console.log("📥 User message:", userMessage);
 
-    // 1. Create new thread
+    // 🧠 Assistant
     const threadRes = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
       headers: {
@@ -26,10 +27,8 @@ app.post('/chat', async (req, res) => {
         'OpenAI-Beta': 'assistants=v2'
       }
     });
-    const threadData = await threadRes.json();
-    const threadId = threadData.id;
+    const threadId = (await threadRes.json()).id;
 
-    // 2. Add system message
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
       headers: {
@@ -40,7 +39,6 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({ role: 'system', content: 'Jesteś Mistrzem Gry RPG. Mów tylko po polsku.' })
     });
 
-    // 3. Add user message
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
       headers: {
@@ -51,7 +49,6 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({ role: 'user', content: userMessage })
     });
 
-    // 4. Run assistant
     const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: 'POST',
       headers: {
@@ -62,22 +59,20 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({ assistant_id: ASSISTANT_ID })
     });
 
-    const runData = await runRes.json();
+    const runId = (await runRes.json()).id;
     let status = 'in_progress';
 
     while (status === 'in_progress') {
       await new Promise(r => setTimeout(r, 1500));
-      const runCheck = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runData.id}`, {
+      const runStatus = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
         headers: {
           'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'OpenAI-Beta': 'assistants=v2'
         }
       });
-      const runStatus = await runCheck.json();
-      status = runStatus.status;
+      status = (await runStatus.json()).status;
     }
 
-    // 5. Get reply message
     const messageRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -85,41 +80,40 @@ app.post('/chat', async (req, res) => {
       }
     });
 
-    const messages = await messageRes.json();
-    const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
+    const reply = (await messageRes.json()).data.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
 
-    if (!reply) return res.status(500).send("No assistant reply received.");
+    if (!reply) return res.status(500).send("No assistant reply.");
 
-    // 6. Generate TTS using ElevenLabs
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Your preferred voice
+    // 🔊 ElevenLabs TTS
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Polish male: Antoni
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "xi-api-key": ELEVEN_API_KEY,
-        "Content-Type": "application/json"
+        'xi-api-key': ELEVEN_API_KEY,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         text: reply,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75
+          stability: 0.4,
+          similarity_boost: 0.8
         }
       })
     });
 
     if (!ttsRes.ok) {
-      const errText = await ttsRes.text();
-      console.error("⚠️ TTS error:", errText);
+      const err = await ttsRes.text();
+      console.error("❌ TTS error:", err);
       return res.json({ reply, audio: null });
     }
 
-    const audioBuffer = await ttsRes.arrayBuffer();
-    const buffer = Buffer.from(audioBuffer);
-    const base64Audio = `data:audio/mpeg;base64,${buffer.toString("base64")}`;
+    const buffer = Buffer.from(await ttsRes.arrayBuffer());
+    const filename = `voice-${Date.now()}.mp3`;
+    const filepath = path.join(__dirname, 'public', filename);
+    fs.writeFileSync(filepath, buffer);
 
-    // ✅ Send base64 audio to bypass Wix cross-origin issues
-    res.json({ reply, audio: base64Audio });
+    res.json({ reply, audio: `https://rpg-master.onrender.com/${filename}` });
 
   } catch (e) {
     console.error("❌ Chat error:", e);
