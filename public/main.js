@@ -15,12 +15,15 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .then(res => {
       if (!res.ok) throw new Error("Błąd TTS");
-      return res.blob();
+      return res.json();
     })
-    .then(blob => {
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play();
+    .then(data => {
+      if (!data.url) throw new Error("Brak URL z TTS");
+      const audio = new Audio(data.url);
+      audio.crossOrigin = "anonymous";
+      audio.play().catch(err => {
+        console.error("Błąd odtwarzania:", err);
+      });
     })
     .catch(err => {
       console.error("Błąd odtwarzania głosu:", err);
