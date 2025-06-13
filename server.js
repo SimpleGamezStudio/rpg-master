@@ -94,7 +94,7 @@ app.post('/chat', async (req, res) => {
     if (!reply) return res.status(500).send("No assistant reply received.");
 
     // 6. Generate TTS using ElevenLabs
-    const voiceId = "h83JI5fjWWu9AOKOVRYh"; // ✅ Replace with your preferred voice
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // ✅ Replace with your preferred voice
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
