@@ -3,7 +3,6 @@ const fetch = require('node-fetch');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -13,12 +12,12 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // for serving .mp3
 
-// 🎮 Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
+
     const threadRes = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
       headers: {
@@ -27,9 +26,9 @@ app.post('/chat', async (req, res) => {
         'OpenAI-Beta': 'assistants=v2'
       }
     });
+
     const threadId = (await threadRes.json()).id;
 
-    // System & user messages
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
       headers: {
@@ -64,15 +63,14 @@ app.post('/chat', async (req, res) => {
     let status = 'in_progress';
 
     while (status === 'in_progress') {
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 1000));
       const runCheck = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runData.id}`, {
         headers: {
           'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'OpenAI-Beta': 'assistants=v2'
         }
       });
-      const runStatus = await runCheck.json();
-      status = runStatus.status;
+      status = (await runCheck.json()).status;
     }
 
     const messageRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -82,25 +80,11 @@ app.post('/chat', async (req, res) => {
       }
     });
 
-    const messagesData = await messageRes.json();
-    const reply = messagesData?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
+    const messages = await messageRes.json();
+    const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
+    if (!reply) return res.json({ reply: "Brak odpowiedzi.", audio: null });
 
-    if (!reply) return res.status(500).json({ error: 'No assistant reply' });
-
-    res.json({ reply });
-  } catch (err) {
-    console.error("❌ Chat error:", err);
-    res.status(500).json({ error: 'Chat server error' });
-  }
-});
-
-// 🔊 TTS endpoint
-app.post('/tts', async (req, res) => {
-  try {
-    const { text } = req.body;
-    if (!text) return res.status(400).json({ error: 'No text provided' });
-
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Polish voice
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Polish voice (Adam)
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
@@ -108,7 +92,7 @@ app.post('/tts', async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        text,
+        text: reply,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
           stability: 0.5,
@@ -118,22 +102,21 @@ app.post('/tts', async (req, res) => {
     });
 
     if (!ttsRes.ok) {
-      const errorText = await ttsRes.text();
-      return res.status(500).json({ error: 'TTS failed', details: errorText });
+      console.warn("⚠️ TTS failed, sending only text");
+      return res.json({ reply, audio: null });
     }
 
     const buffer = Buffer.from(await ttsRes.arrayBuffer());
     const filename = `output-${Date.now()}.mp3`;
     const filepath = path.join(__dirname, 'public', filename);
     fs.writeFileSync(filepath, buffer);
+    const audioUrl = `https://rpg-master.onrender.com/${filename}`;
 
-    res.json({ audioUrl: `https://rpg-master.onrender.com/${filename}` });
-  } catch (err) {
-    console.error("❌ TTS error:", err);
-    res.status(500).json({ error: 'TTS server error' });
+    res.json({ reply, audio: audioUrl });
+  } catch (e) {
+    console.error("❌ Server error:", e);
+    res.status(500).send("Internal server error");
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
