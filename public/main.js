@@ -106,6 +106,21 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("controls").style.display = "flex";
     micBtn.style.display = "block";
 
-    appendMessage("gm", "Witaj! Ilu graczy weźmie udział w tej kampanii? Czy chcecie zagrać w gotową przygodę, czy stworzyć własną?");
+    const intro = "Witaj! Ilu graczy weźmie udział w tej kampanii? Czy chcecie zagrać w gotową przygodę, czy stworzyć własną?";
+    appendMessage("gm", intro);
+
+    // Request speech from backend
+    fetch("https://rpg-master.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: intro })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.audio) speakFromUrl(data.audio);
+    })
+    .catch(err => {
+      console.error("Błąd pobierania audio dla wstępu:", err);
+    });
   });
 });
