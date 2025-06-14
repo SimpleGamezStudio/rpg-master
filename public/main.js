@@ -7,22 +7,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let recognition;
 
-  function speak(text) {
-    fetch("/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Błąd TTS");
-      return res.blob();
-    })
-    .then(blob => {
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play();
-    })
-    .catch(err => {
+  function speakFromUrl(audioUrl) {
+    if (!audioUrl) return;
+    const audio = new Audio(audioUrl);
+    audio.play().catch((err) => {
       console.error("Błąd odtwarzania głosu:", err);
     });
   }
@@ -34,8 +22,6 @@ document.addEventListener("DOMContentLoaded", function () {
     chatLog.appendChild(div);
     animateText(div.querySelector(".text"), text);
     chatLog.scrollTop = chatLog.scrollHeight;
-
-    if (sender === "gm") speak(text);
   }
 
   function animateText(container, text) {
@@ -52,14 +38,20 @@ document.addEventListener("DOMContentLoaded", function () {
   function sendMessage(message) {
     appendMessage("user", message);
     input.value = "";
-    fetch("/chat", {
+    fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message })
     })
     .then(res => res.json())
     .then(data => {
-      if (data.reply) appendMessage("gm", data.reply);
+      if (data.reply) {
+        appendMessage("gm", data.reply);
+        if (data.audio) speakFromUrl(data.audio);
+      }
+    })
+    .catch(err => {
+      console.error("Błąd komunikacji z serwerem:", err);
     });
   }
 
@@ -77,18 +69,23 @@ document.addEventListener("DOMContentLoaded", function () {
     recognition.lang = "pl-PL";
     recognition.continuous = false;
     recognition.interimResults = false;
+
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       input.value = transcript;
       sendBtn.click();
     };
+
     recognition.onerror = (event) => {
-      console.error("Błąd rozpoznawania mowy:", event);
+      console.error("❌ Błąd rozpoznawania mowy:", event);
     };
+  } else {
+    console.warn("🎙️ WebkitSpeechRecognition niedostępny w tej przeglądarce.");
   }
 
   micBtn.addEventListener("click", () => {
     if (recognition) recognition.start();
+    else alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
   });
 
   startBtn.addEventListener("click", () => {
