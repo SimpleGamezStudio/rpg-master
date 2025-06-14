@@ -109,18 +109,23 @@ document.addEventListener("DOMContentLoaded", function () {
     const intro = "Witaj! Ilu graczy weźmie udział w tej kampanii? Czy chcecie zagrać w gotową przygodę, czy stworzyć własną?";
     appendMessage("gm", intro);
 
-    // Request speech from backend
-    fetch("https://rpg-master.onrender.com/chat", {
+    // Use ElevenLabs directly for exact intro voice
+    fetch("https://rpg-master.onrender.com/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: intro })
+      body: JSON.stringify({ text: intro })
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data.audio) speakFromUrl(data.audio);
+    .then(res => {
+      if (!res.ok) throw new Error("TTS request failed");
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
     })
     .catch(err => {
-      console.error("Błąd pobierania audio dla wstępu:", err);
+      console.error("Błąd odtwarzania wstępu:", err);
     });
   });
 });
