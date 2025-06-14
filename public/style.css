@@ -36,7 +36,6 @@ body {
   opacity: 0.7;
   margin-bottom: 10px;
   transition: opacity 0.3s ease;
-  display: none; /* ✅ Hides it until needed */
 }
 
 form,
