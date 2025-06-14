@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const startBtn = document.getElementById("start-btn");
 
   let recognition;
+  let recognitionAvailable = false;
 
   function speakFromUrl(audioUrl) {
     if (!audioUrl) return;
@@ -64,6 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (e.key === "Enter") sendBtn.click();
   });
 
+  // Rozpoznawanie mowy
   if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "pl-PL";
@@ -78,14 +80,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     recognition.onerror = (event) => {
       console.error("❌ Błąd rozpoznawania mowy:", event);
+      alert("Nie udało się rozpoznać mowy. Upewnij się, że mikrofon działa.");
     };
+
+    recognitionAvailable = true;
   } else {
-    console.warn("🎙️ WebkitSpeechRecognition niedostępny w tej przeglądarce.");
+    console.warn("🎙️ WebkitSpeechRecognition niedostępny.");
   }
 
   micBtn.addEventListener("click", () => {
-    if (recognition) recognition.start();
-    else alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
+    if (recognitionAvailable && recognition) {
+      try {
+        recognition.start();
+      } catch (e) {
+        console.warn("⚠️ Rozpoznawanie mowy już aktywne lub błąd:", e);
+      }
+    } else {
+      alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
+    }
   });
 
   startBtn.addEventListener("click", () => {
