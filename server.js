@@ -84,7 +84,7 @@ app.post('/chat', async (req, res) => {
     const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
     if (!reply) return res.json({ reply: "Brak odpowiedzi.", audio: null });
 
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Polish voice (Adam)
+    const voiceId = "h83JI5fjWWu9AOKOVRYh"; // Polish voice (Adam)
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
