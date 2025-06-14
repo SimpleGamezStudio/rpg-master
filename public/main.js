@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const chatLog = document.getElementById("chat-log");
   const input = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -8,6 +8,38 @@ document.addEventListener("DOMContentLoaded", function () {
   let recognition;
   let recognitionAvailable = false;
   let isSpeaking = false;
+  let username = localStorage.getItem("rpgUsername");
+
+  // 🧑 Ask for username and login/register
+  async function getOrPromptUsername() {
+    if (!username) {
+      username = prompt("Podaj swoją nazwę gracza:");
+      if (!username) {
+        alert("Musisz podać nazwę!");
+        return;
+      }
+
+      // Try to log in
+      const loginRes = await fetch("https://rpg-master.onrender.com/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+
+      if (loginRes.status === 404) {
+        // Register if not found
+        await fetch("https://rpg-master.onrender.com/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username })
+        });
+      }
+
+      localStorage.setItem("rpgUsername", username);
+    }
+  }
+
+  await getOrPromptUsername();
 
   function setInputEnabled(enabled) {
     input.disabled = !enabled;
@@ -61,14 +93,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function sendMessage(message) {
-    if (isSpeaking) return;
+    if (isSpeaking || !username) return;
 
     appendMessage("user", message);
     input.value = "";
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message, username })
     })
     .then(res => res.json())
     .then(data => {
@@ -78,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .catch(err => {
       console.error("Błąd komunikacji z serwerem:", err);
-      setInputEnabled(true); // restore just in case
+      setInputEnabled(true);
       isSpeaking = false;
     });
   }
