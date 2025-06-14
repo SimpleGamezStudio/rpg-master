@@ -12,8 +12,9 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // for serving .mp3
+app.use(express.static('public')); // serves .mp3 files
 
+// 🧠 Chat route (GPT + TTS)
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -84,7 +85,7 @@ app.post('/chat', async (req, res) => {
     const reply = messages?.data?.find(m => m.role === 'assistant')?.content?.[0]?.text?.value;
     if (!reply) return res.json({ reply: "Brak odpowiedzi.", audio: null });
 
-    const voiceId = "h83JI5fjWWu9AOKOVRYh"; // Polish voice (Adam)
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Adam
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
@@ -116,6 +117,39 @@ app.post('/chat', async (req, res) => {
   } catch (e) {
     console.error("❌ Server error:", e);
     res.status(500).send("Internal server error");
+  }
+});
+
+// 🎙️ Pure TTS route (no GPT, for custom text like intro)
+app.post('/tts', async (req, res) => {
+  try {
+    const text = req.body.text;
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Adam PL voice
+
+    const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: "POST",
+      headers: {
+        "xi-api-key": ELEVEN_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75
+        }
+      })
+    });
+
+    if (!ttsRes.ok) return res.status(500).send("TTS failed");
+
+    const buffer = Buffer.from(await ttsRes.arrayBuffer());
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.send(buffer);
+  } catch (e) {
+    console.error("TTS error:", e);
+    res.status(500).send("TTS error");
   }
 });
 
