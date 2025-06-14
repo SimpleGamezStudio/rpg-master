@@ -7,36 +7,62 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let recognition;
   let recognitionAvailable = false;
+  let isSpeaking = false;
 
-  function speakFromUrl(audioUrl) {
-    if (!audioUrl) return;
+  function setInputEnabled(enabled) {
+    input.disabled = !enabled;
+    sendBtn.disabled = !enabled;
+    micBtn.disabled = !enabled;
+  }
+
+  function speakFromUrl(audioUrl, callback) {
+    if (!audioUrl) {
+      callback?.();
+      return;
+    }
     const audio = new Audio(audioUrl);
+    audio.onended = () => callback?.();
+    audio.onerror = () => callback?.();
     audio.play().catch((err) => {
       console.error("Błąd odtwarzania głosu:", err);
+      callback?.();
     });
   }
 
-  function appendMessage(sender, text) {
+  function appendMessage(sender, text, audioUrl = null) {
+    isSpeaking = true;
+    setInputEnabled(false);
+
     const div = document.createElement("div");
     div.className = "message";
     div.innerHTML = `<strong>${sender === "gm" ? "Mistrz Gry" : "Gracz"}:</strong> <span class="text"></span>`;
     chatLog.appendChild(div);
-    animateText(div.querySelector(".text"), text);
+    const textContainer = div.querySelector(".text");
+    animateText(textContainer, text, () => {
+      speakFromUrl(audioUrl, () => {
+        isSpeaking = false;
+        setInputEnabled(true);
+      });
+    });
     chatLog.scrollTop = chatLog.scrollHeight;
   }
 
-  function animateText(container, text) {
+  function animateText(container, text, onComplete) {
     let i = 0;
     function type() {
       if (i < text.length) {
         container.textContent += text[i++];
         setTimeout(type, 25);
+      } else {
+        onComplete?.();
       }
     }
     type();
   }
 
   function sendMessage(message) {
+    if (isSpeaking) return;
+
     appendMessage("user", message);
     input.value = "";
     fetch("https://rpg-master.onrender.com/chat", {
@@ -47,25 +73,25 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(res => res.json())
     .then(data => {
       if (data.reply) {
-        appendMessage("gm", data.reply);
-        if (data.audio) speakFromUrl(data.audio);
+        appendMessage("gm", data.reply, data.audio);
       }
     })
     .catch(err => {
       console.error("Błąd komunikacji z serwerem:", err);
+      setInputEnabled(true); // restore just in case
+      isSpeaking = false;
     });
   }
 
   sendBtn.addEventListener("click", () => {
     const message = input.value.trim();
-    if (message) sendMessage(message);
+    if (message && !isSpeaking) sendMessage(message);
   });
 
   input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendBtn.click();
+    if (e.key === "Enter" && !isSpeaking) sendBtn.click();
   });
 
-  // Rozpoznawanie mowy
   if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "pl-PL";
@@ -84,17 +110,17 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     recognitionAvailable = true;
-  } else {
-    console.warn("🎙️ WebkitSpeechRecognition niedostępny.");
   }
 
   micBtn.addEventListener("click", () => {
-    if (recognitionAvailable && recognition) {
+    if (recognitionAvailable && recognition && !isSpeaking) {
       try {
         recognition.start();
       } catch (e) {
         console.warn("⚠️ Rozpoznawanie mowy już aktywne lub błąd:", e);
       }
+    } else if (isSpeaking) {
+      alert("Poczekaj, aż Mistrz Gry skończy mówić.");
     } else {
       alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
     }
@@ -109,7 +135,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const intro = "Witaj! Ilu graczy weźmie udział w tej kampanii? Czy chcecie zagrać w gotową przygodę, czy stworzyć własną?";
     appendMessage("gm", intro);
 
-    // Use ElevenLabs directly for exact intro voice
     fetch("https://rpg-master.onrender.com/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -121,11 +146,15 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .then(blob => {
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play();
+      speakFromUrl(url, () => {
+        isSpeaking = false;
+        setInputEnabled(true);
+      });
     })
     .catch(err => {
       console.error("Błąd odtwarzania wstępu:", err);
+      isSpeaking = false;
+      setInputEnabled(true);
     });
   });
 });
