@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   let recognition;
   let recognitionAvailable = false;
   let isSpeaking = false;
-  let isAwaitingReply = false;
   let username = localStorage.getItem("rpgUsername");
 
   async function getOrPromptUsername() {
@@ -63,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   function appendMessage(sender, text, audioUrl = null) {
     isSpeaking = true;
     setInputEnabled(false);
-    statusIndicator.style.display = "block";
+    statusIndicator.style.display = "block"; // ✅ Show "Mistrz Gry mówi..."
 
     const div = document.createElement("div");
     div.className = "message";
@@ -73,9 +72,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     animateText(textContainer, text, () => {
       speakFromUrl(audioUrl, () => {
         isSpeaking = false;
-        isAwaitingReply = false;
         setInputEnabled(true);
-        statusIndicator.style.display = "none";
+        statusIndicator.style.display = "none"; // ✅ Hide after speaking
       });
     });
     chatLog.scrollTop = chatLog.scrollHeight;
@@ -95,41 +93,36 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   function sendMessage(message) {
-    if (isSpeaking || isAwaitingReply || !username) return;
+    if (isSpeaking || !username) return;
 
-    isAwaitingReply = true;
     appendMessage("user", message);
     input.value = "";
-
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, username })
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.reply) {
-          appendMessage("gm", data.reply, data.audio);
-        } else {
-          isAwaitingReply = false;
-        }
-      })
-      .catch(err => {
-        console.error("Błąd komunikacji z serwerem:", err);
-        isSpeaking = false;
-        isAwaitingReply = false;
-        setInputEnabled(true);
-        statusIndicator.style.display = "none";
-      });
+    .then(res => res.json())
+    .then(data => {
+      if (data.reply) {
+        appendMessage("gm", data.reply, data.audio);
+      }
+    })
+    .catch(err => {
+      console.error("Błąd komunikacji z serwerem:", err);
+      setInputEnabled(true);
+      isSpeaking = false;
+      statusIndicator.style.display = "none";
+    });
   }
 
   sendBtn.addEventListener("click", () => {
     const message = input.value.trim();
-    if (message && !isSpeaking && !isAwaitingReply) sendMessage(message);
+    if (message && !isSpeaking) sendMessage(message);
   });
 
   input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter" && !isSpeaking && !isAwaitingReply) sendBtn.click();
+    if (e.key === "Enter" && !isSpeaking) sendBtn.click();
   });
 
   if ('webkitSpeechRecognition' in window) {
@@ -153,13 +146,13 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   micBtn.addEventListener("click", () => {
-    if (recognitionAvailable && recognition && !isSpeaking && !isAwaitingReply) {
+    if (recognitionAvailable && recognition && !isSpeaking) {
       try {
         recognition.start();
       } catch (e) {
         console.warn("⚠️ Rozpoznawanie mowy już aktywne lub błąd:", e);
       }
-    } else if (isSpeaking || isAwaitingReply) {
+    } else if (isSpeaking) {
       alert("Poczekaj, aż Mistrz Gry skończy mówić.");
     } else {
       alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
@@ -168,7 +161,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   startBtn.addEventListener("click", () => {
     startBtn.style.display = "none";
-    chatLog.style.display = "block";
+    document.getElementById("chat-log").style.display = "block";
     document.getElementById("controls").style.display = "flex";
     micBtn.style.display = "block";
 
@@ -180,25 +173,23 @@ document.addEventListener("DOMContentLoaded", async function () {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: intro })
     })
-      .then(res => {
-        if (!res.ok) throw new Error("TTS request failed");
-        return res.blob();
-      })
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        speakFromUrl(url, () => {
-          isSpeaking = false;
-          isAwaitingReply = false;
-          setInputEnabled(true);
-          statusIndicator.style.display = "none";
-        });
-      })
-      .catch(err => {
-        console.error("Błąd odtwarzania wstępu:", err);
+    .then(res => {
+      if (!res.ok) throw new Error("TTS request failed");
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      speakFromUrl(url, () => {
         isSpeaking = false;
-        isAwaitingReply = false;
         setInputEnabled(true);
         statusIndicator.style.display = "none";
       });
+    })
+    .catch(err => {
+      console.error("Błąd odtwarzania wstępu:", err);
+      isSpeaking = false;
+      setInputEnabled(true);
+      statusIndicator.style.display = "none";
+    });
   });
 });
