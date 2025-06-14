@@ -4,13 +4,13 @@ document.addEventListener("DOMContentLoaded", async function () {
   const sendBtn = document.getElementById("send-btn");
   const micBtn = document.getElementById("mic-btn");
   const startBtn = document.getElementById("start-btn");
+  const statusIndicator = document.getElementById("status-indicator");
 
   let recognition;
   let recognitionAvailable = false;
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
 
-  // 🧑 Ask for username and login/register
   async function getOrPromptUsername() {
     if (!username) {
       username = prompt("Podaj swoją nazwę gracza:");
@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         return;
       }
 
-      // Try to log in
       const loginRes = await fetch("https://rpg-master.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,7 +26,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       });
 
       if (loginRes.status === 404) {
-        // Register if not found
         await fetch("https://rpg-master.onrender.com/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -64,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   function appendMessage(sender, text, audioUrl = null) {
     isSpeaking = true;
     setInputEnabled(false);
+    statusIndicator.style.display = "block"; // ✅ Show "Mistrz Gry mówi..."
 
     const div = document.createElement("div");
     div.className = "message";
@@ -74,6 +73,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       speakFromUrl(audioUrl, () => {
         isSpeaking = false;
         setInputEnabled(true);
+        statusIndicator.style.display = "none"; // ✅ Hide after speaking
       });
     });
     chatLog.scrollTop = chatLog.scrollHeight;
@@ -112,6 +112,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       console.error("Błąd komunikacji z serwerem:", err);
       setInputEnabled(true);
       isSpeaking = false;
+      statusIndicator.style.display = "none";
     });
   }
 
@@ -181,12 +182,14 @@ document.addEventListener("DOMContentLoaded", async function () {
       speakFromUrl(url, () => {
         isSpeaking = false;
         setInputEnabled(true);
+        statusIndicator.style.display = "none";
       });
     })
     .catch(err => {
       console.error("Błąd odtwarzania wstępu:", err);
       isSpeaking = false;
       setInputEnabled(true);
+      statusIndicator.style.display = "none";
     });
   });
 });
