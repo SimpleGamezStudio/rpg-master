@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const sendBtn = document.getElementById("send-btn");
   const micBtn = document.getElementById("mic-btn");
   const startBtn = document.getElementById("start-btn");
-  const status = document.getElementById("status-indicator");
 
   let recognition;
   let recognitionAvailable = false;
@@ -14,14 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
     input.disabled = !enabled;
     sendBtn.disabled = !enabled;
     micBtn.disabled = !enabled;
-
-    if (enabled) {
-      status.textContent = "🟢 Możesz odpowiedzieć";
-      status.style.opacity = "1";
-    } else {
-      status.textContent = "⏳ Mistrz Gry mówi...";
-      status.style.opacity = "0.6";
-    }
   }
 
   function speakFromUrl(audioUrl, callback) {
@@ -47,14 +38,12 @@ document.addEventListener("DOMContentLoaded", function () {
     div.innerHTML = `<strong>${sender === "gm" ? "Mistrz Gry" : "Gracz"}:</strong> <span class="text"></span>`;
     chatLog.appendChild(div);
     const textContainer = div.querySelector(".text");
-
     animateText(textContainer, text, () => {
       speakFromUrl(audioUrl, () => {
         isSpeaking = false;
         setInputEnabled(true);
       });
     });
-
     chatLog.scrollTop = chatLog.scrollHeight;
   }
 
@@ -89,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .catch(err => {
       console.error("Błąd komunikacji z serwerem:", err);
-      setInputEnabled(true);
+      setInputEnabled(true); // restore just in case
       isSpeaking = false;
     });
   }
@@ -131,9 +120,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.warn("⚠️ Rozpoznawanie mowy już aktywne lub błąd:", e);
       }
     } else if (isSpeaking) {
-      alert("⏳ Poczekaj, aż Mistrz Gry skończy mówić.");
+      alert("Poczekaj, aż Mistrz Gry skończy mówić.");
     } else {
-      alert("🎙️ Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
+      alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
     }
   });
 
@@ -142,7 +131,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("chat-log").style.display = "block";
     document.getElementById("controls").style.display = "flex";
     micBtn.style.display = "block";
-    status.style.display = "block";
 
     const intro = "Witaj! Ilu graczy weźmie udział w tej kampanii? Czy chcecie zagrać w gotową przygodę, czy stworzyć własną?";
     appendMessage("gm", intro);
