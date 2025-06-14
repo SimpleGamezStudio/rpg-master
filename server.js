@@ -10,25 +10,72 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
 const ASSISTANT_ID = process.env.ASSISTANT_ID;
 
+const USERS_FILE = path.join(__dirname, 'users.json');
+
+function loadUsers() {
+  if (!fs.existsSync(USERS_FILE)) return {};
+  return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public')); // serves .mp3 files
 
+// 🧑‍💻 Register a new user
+app.post('/register', (req, res) => {
+  const { username } = req.body;
+  const users = loadUsers();
+
+  if (users[username]) {
+    return res.status(400).json({ error: 'Użytkownik już istnieje.' });
+  }
+
+  users[username] = { threadId: null };
+  saveUsers(users);
+  res.json({ success: true });
+});
+
+// 🔐 Login existing user
+app.post('/login', (req, res) => {
+  const { username } = req.body;
+  const users = loadUsers();
+
+  if (!users[username]) {
+    return res.status(404).json({ error: 'Nie znaleziono użytkownika.' });
+  }
+
+  res.json({ success: true, username });
+});
+
 // 🧠 Chat route (GPT + TTS)
 app.post('/chat', async (req, res) => {
   try {
-    const userMessage = req.body.message;
+    const { message, username } = req.body;
+    if (!username) return res.status(400).json({ error: "Brak nazwy użytkownika" });
 
-    const threadRes = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      }
-    });
+    const users = loadUsers();
+    if (!users[username]) return res.status(404).json({ error: "Nieznany użytkownik" });
 
-    const threadId = (await threadRes.json()).id;
+    let threadId = users[username].threadId;
+
+    if (!threadId) {
+      const threadRes = await fetch('https://api.openai.com/v1/threads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      threadId = (await threadRes.json()).id;
+      users[username].threadId = threadId;
+      saveUsers(users);
+    }
 
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
@@ -47,7 +94,7 @@ app.post('/chat', async (req, res) => {
         'Content-Type': 'application/json',
         'OpenAI-Beta': 'assistants=v2'
       },
-      body: JSON.stringify({ role: 'user', content: userMessage })
+      body: JSON.stringify({ role: 'user', content: message })
     });
 
     const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
@@ -120,11 +167,11 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// 🎙️ Pure TTS route (no GPT, for custom text like intro)
+// 🎙️ TTS-only route
 app.post('/tts', async (req, res) => {
   try {
     const text = req.body.text;
-    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Adam PL voice
+    const voiceId = "TxGEqnHWrfWFTfGW9XjX"; // Adam
 
     const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
