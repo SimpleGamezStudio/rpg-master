@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
 
+  // Hide everything except form
   chatLog.style.display = "none";
   micBtn.style.display = "none";
   controls.style.display = "none";
@@ -74,12 +75,21 @@ document.addEventListener("DOMContentLoaded", async function () {
     div.innerHTML = `<strong>${sender === "gm" ? "Mistrz Gry" : "Gracz"}:</strong> <span class="text"></span>`;
     chatLog.appendChild(div);
     const textContainer = div.querySelector(".text");
+
     animateText(textContainer, text, () => {
       speakFromUrl(audioUrl, () => {
         isSpeaking = false;
+
+        // Re-enable input only after GM speaks first time
+        if (controls.style.display === "none") {
+          controls.style.display = "flex";
+          micBtn.style.display = "block";
+        }
+
         setInputEnabled(true);
       });
     });
+
     chatLog.scrollTop = chatLog.scrollHeight;
   }
 
@@ -128,6 +138,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (e.key === "Enter" && !isSpeaking) sendBtn.click();
   });
 
+  // 🎙️ Mikrofon
   if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "pl-PL";
@@ -162,26 +173,27 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🔥 Automatyczne rozpoczęcie gry przez Mistrza Gry
+  // 🎲 Rozpoczęcie gry przez Mistrza Gry
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
+    // Show game, hide form
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
     chatLog.style.display = "block";
-    controls.style.display = "flex";
-    micBtn.style.display = "block";
+    controls.style.display = "none";
+    micBtn.style.display = "none";
     statusIndicator.style.display = "block";
+    setInputEnabled(false);
 
     const intro = `Rozpoczynamy grę. Liczba graczy: ${playerCount}, poziom trudności: ${difficulty}, ` +
       `postacie: ${characterChoice}, kampania: ${campaignChoice}. ` +
       `Na podstawie tych ustawień rozpocznij kampanię — opisz pierwszy moment przygody, miejsce, nastrój, ` +
       `oraz nadaj graczom imiona i powiedz, co widzą lub słyszą.`;
 
-    // ❗️Wysyłamy bez widocznej wiadomości gracza
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
