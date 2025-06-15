@@ -67,23 +67,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   }
 
-  function speakText(text, callback) {
-    fetch("https://rpg-master.onrender.com/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    })
-      .then(res => res.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        speakFromUrl(url, callback);
-      })
-      .catch(err => {
-        console.error("Błąd TTS:", err);
-        callback?.();
-      });
-  }
-
   function appendMessage(sender, text, audioUrl = null) {
     isSpeaking = true;
     setInputEnabled(false);
@@ -182,14 +165,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpoczęcie gry
+  // 🎲 Rozpocznij grę — tylko jeden raz, bez duplikacji
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
-    // Ukryj formularz, pokaż chat
+    // Pokaż interfejs gry
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
     chatLog.style.display = "block";
@@ -200,25 +183,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const intro = `Rozpoczynamy grę! Graczy: ${playerCount}, poziom trudności: ${difficulty}. ` +
       `Postacie: ${characterChoice}, kampania: ${campaignChoice}.`;
 
-    appendMessage("user", intro);
-
-    speakText(intro, () => {
-      fetch("https://rpg-master.onrender.com/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: intro, username })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.reply) {
-            appendMessage("gm", data.reply, data.audio);
-          }
-        })
-        .catch(err => {
-          console.error("Błąd komunikacji z serwerem:", err);
-          setInputEnabled(true);
-          isSpeaking = false;
-        });
-    });
+    // Wyślij do GPT — pojawi się tylko jedna odpowiedź
+    sendMessage(intro);
   });
 });
