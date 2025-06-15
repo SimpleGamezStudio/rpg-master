@@ -8,6 +8,12 @@
 </head>
 <body>
   <div id="game-container">
+    <!-- ✅ LOADING SCREEN -->
+    <div id="loading-screen" style="display: none;">
+      Mistrz Gry przygotowuje twoją przygodę...
+    </div>
+
+    <!-- ✅ FORM -->
     <div id="setup-form">
       <label>Liczba graczy:
         <input type="number" id="player-count" min="1" max="6" value="1" />
@@ -33,6 +39,7 @@
       </label><br/><br/>
     </div>
 
+    <!-- ✅ INTERFACE -->
     <div id="status-indicator">⏳ Mistrz Gry mówi...</div>
     <div id="chat-log"></div>
     <div id="controls">
