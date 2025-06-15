@@ -20,6 +20,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
 }
 
 #setup-form {
@@ -132,4 +133,24 @@ input:disabled {
 
 .message strong {
   color: #cfa976;
+}
+
+/* 🔄 Polish Loading Screen */
+#loading-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #1b1b1b url('https://www.transparenttextures.com/patterns/black-linen.png');
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  font-size: 1.5rem;
+  color: #cfa976;
+  font-family: 'IM Fell English SC', serif;
+  text-align: center;
+  padding: 30px;
+  border-radius: 10px;
 }
