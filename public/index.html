@@ -5,132 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Mistrz Gry</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background: #1b1b1b;
-      color: #f4f4f4;
-      font-family: 'Georgia', serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    #game-container {
-      width: 95%;
-      max-width: 900px;
-      background-color: #000000ee;
-      border: 2px solid #856d4d;
-      border-radius: 10px;
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #status-indicator {
-      font-size: 1rem;
-      color: #cfa976;
-      font-weight: bold;
-      text-align: center;
-      opacity: 0.7;
-      margin-bottom: 10px;
-      transition: opacity 0.3s ease;
-    }
-
-    #chat-log {
-      width: 100%;
-      max-height: 450px;
-      overflow-y: auto;
-      margin-bottom: 20px;
-      background: #111;
-      padding: 15px;
-      border-radius: 6px;
-      border: 1px solid #444;
-    }
-
-    .message {
-      margin: 10px 0;
-    }
-
-    .message strong {
-      color: #cfa976;
-    }
-
-    #controls {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    #controls input {
-      flex: 1;
-      padding: 12px;
-      background: #222;
-      border: 1px solid #555;
-      color: #fff;
-      font-size: 1rem;
-      border-radius: 4px;
-    }
-
-    #controls button {
-      padding: 12px 20px;
-      background-color: #856d4d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    #controls button:hover,
-    #start-btn:hover,
-    #mic-btn:hover {
-      background-color: #a67c52;
-    }
-
-    #start-btn {
-      margin-top: 10px;
-      padding: 12px 24px;
-      font-size: 1rem;
-      background-color: #a67c52;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    #mic-btn {
-      margin-top: 10px;
-      width: 100%;
-      padding: 12px;
-      background-color: #856d4d;
-      border: none;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    #controls,
-    #mic-btn,
-    #chat-log {
-      display: none;
-    }
-
-    button:disabled,
-    input:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  </style>
 </head>
 <body>
   <div id="game-container">
+    <div id="setup-form">
+      <label>Liczba graczy:
+        <input type="number" id="player-count" min="1" max="6" value="1" />
+      </label><br/><br/>
+      <label>Poziom trudności:
+        <select id="difficulty">
+          <option value="łatwy">Łatwy</option>
+          <option value="średni" selected>Średni</option>
+          <option value="trudny">Trudny</option>
+        </select>
+      </label><br/><br/>
+      <label>Postacie:
+        <select id="character-choice">
+          <option value="własne">Stworzymy własne</option>
+          <option value="losowe">Losowe</option>
+        </select>
+      </label><br/><br/>
+      <label>Kampania:
+        <select id="campaign-choice">
+          <option value="własna">Własna</option>
+          <option value="gotowa">Gotowa</option>
+        </select>
+      </label><br/><br/>
+    </div>
+
     <div id="status-indicator">⏳ Mistrz Gry mówi...</div>
     <div id="chat-log"></div>
     <div id="controls">
@@ -140,6 +42,7 @@
     <button id="start-btn">🎲 Rozpocznij grę</button>
     <button id="mic-btn">🎤 Mów</button>
   </div>
+
   <script src="main.js"></script>
 </body>
 </html>
