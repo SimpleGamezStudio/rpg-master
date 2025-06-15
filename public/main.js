@@ -12,13 +12,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
 
-  // Ukryj wszystko poza formularzem
   chatLog.style.display = "none";
   micBtn.style.display = "none";
   controls.style.display = "none";
   statusIndicator.style.display = "none";
 
-  // 🧑 Login lub rejestracja użytkownika
   async function getOrPromptUsername() {
     if (!username) {
       username = prompt("Podaj swoją nazwę gracza:");
@@ -130,7 +128,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (e.key === "Enter" && !isSpeaking) sendBtn.click();
   });
 
-  // 🎙️ Obsługa mikrofonu
   if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "pl-PL";
@@ -165,14 +162,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpocznij grę — bez pokazywania wiadomości gracza
+  // 🔥 Automatyczne rozpoczęcie gry przez Mistrza Gry
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
-    // Pokaż interfejs gry
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
     chatLog.style.display = "block";
@@ -185,7 +181,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       `Na podstawie tych ustawień rozpocznij kampanię — opisz pierwszy moment przygody, miejsce, nastrój, ` +
       `oraz nadaj graczom imiona i powiedz, co widzą lub słyszą.`;
 
-    // ❗️Wyślij bez wyświetlania wiadomości użytkownika
+    // ❗️Wysyłamy bez widocznej wiadomości gracza
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
