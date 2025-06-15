@@ -6,17 +6,21 @@ document.addEventListener("DOMContentLoaded", async function () {
   const startBtn = document.getElementById("start-btn");
   const statusIndicator = document.getElementById("status-indicator");
   const controls = document.getElementById("controls");
+  const loadingScreen = document.getElementById("loading-screen");
 
   let recognition;
   let recognitionAvailable = false;
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
 
+  // Hide everything except the setup form
   chatLog.style.display = "none";
   micBtn.style.display = "none";
   controls.style.display = "none";
   statusIndicator.style.display = "none";
+  loadingScreen.style.display = "none";
 
+  // 🧑 User login/registration
   async function getOrPromptUsername() {
     if (!username) {
       username = prompt("Podaj swoją nazwę gracza:");
@@ -74,19 +78,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     div.innerHTML = `<strong>${sender === "gm" ? "Mistrz Gry" : "Gracz"}:</strong> <span class="text"></span>`;
     chatLog.appendChild(div);
     const textContainer = div.querySelector(".text");
-
     animateText(textContainer, text, () => {
-      if (controls.style.display === "none") {
-        controls.style.display = "flex";
-        micBtn.style.display = "block";
-      }
-      setInputEnabled(true);
-
       speakFromUrl(audioUrl, () => {
         isSpeaking = false;
+        setInputEnabled(true);
       });
     });
-
     chatLog.scrollTop = chatLog.scrollHeight;
   }
 
@@ -108,6 +105,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     appendMessage("user", message);
     input.value = "";
+
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -135,7 +133,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (e.key === "Enter" && !isSpeaking) sendBtn.click();
   });
 
-  // 🎙️ Mikrofon
+  // 🎙️ Speech recognition
   if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "pl-PL";
@@ -170,42 +168,41 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpocznij grę
+  // 🎲 Game start
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
+    const intro = `Rozpoczynamy grę. Liczba graczy: ${playerCount}, poziom trudności: ${difficulty}, Postacie: ${characterChoice}, Kampania: ${campaignChoice}. Na podstawie tych ustawień rozpocznij kampanię — opisz pierwszy moment przygody, miejsce, nastrój i klimat. Jeśli wybrano tworzenie własnych postaci lub kampanii, poprowadź gracza przez ten proces.`;
+
+    // Show loading screen
+    loadingScreen.style.display = "flex";
+
+    // Hide setup UI
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
-    chatLog.style.display = "block";
-    controls.style.display = "none";
-    micBtn.style.display = "none";
-    statusIndicator.style.display = "block";
-    setInputEnabled(false);
-
-    // 🧠 Tworzymy prompt w formie flag czytelnych dla systemu
-    const message = `Rozpoczynamy grę RPG.
-Liczba graczy: ${playerCount}.
-Poziom trudności: ${difficulty}.
-Postacie: ${characterChoice}.
-Kampania: ${campaignChoice}.
-Pamiętaj, nie używaj emotikonów ani list punktowanych. Wszystkie odpowiedzi mają mieć formę płynnej narracji gotowej do odczytu przez lektora.`;
 
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, username })
+      body: JSON.stringify({ message: intro, username })
     })
       .then(res => res.json())
       .then(data => {
+        loadingScreen.style.display = "none";
         if (data.reply) {
+          chatLog.style.display = "block";
+          controls.style.display = "flex";
+          micBtn.style.display = "block";
+          statusIndicator.style.display = "block";
           appendMessage("gm", data.reply, data.audio);
         }
       })
       .catch(err => {
         console.error("Błąd komunikacji z serwerem:", err);
+        loadingScreen.style.display = "none";
         setInputEnabled(true);
         isSpeaking = false;
       });
