@@ -36,7 +36,7 @@ body {
   opacity: 0.7;
   margin-bottom: 10px;
   transition: opacity 0.3s ease;
-  display: none; /* ✅ Hides it until needed */
+  display: none;
 }
 
 form,
@@ -95,4 +95,27 @@ input:disabled {
 
 .message strong {
   color: #cfa976;
+}
+
+/* FORMULARZ USTAWIEŃ */
+#setup-form {
+  width: 100%;
+  margin-bottom: 20px;
+  color: #f4f4f4;
+  font-size: 1rem;
+}
+
+#setup-form label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+#setup-form input,
+#setup-form select {
+  padding: 8px;
+  width: 100%;
+  background: #222;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 4px;
 }
