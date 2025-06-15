@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Start gry z twardym kreatorem
+  // 🎲 Start gry z pełną logiką kreatora
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
@@ -185,21 +185,21 @@ document.addEventListener("DOMContentLoaded", async function () {
     statusIndicator.style.display = "block";
     setInputEnabled(false);
 
-    let intro = `Rozpocznij grę RPG dla ${playerCount} graczy na poziomie trudności "${difficulty}". `;
+    let intro = `Rozpoczynamy grę RPG dla ${playerCount} graczy. Wybrany poziom trudności to "${difficulty}". `;
 
     if (characterChoice === "Stworzymy własne") {
-      intro += `Gracze wybrali własnoręczne tworzenie postaci. Nie wolno ci tworzyć postaci za nich. Musisz przeprowadzić kreator – zapytaj graczy o imię, klasę, wygląd i cechy. Potem wylosuj uproszczone statystyki.`;
+      intro += `Gracze wybrali własnoręczne tworzenie postaci. Nie wolno ci wymyślać ani opisywać ich samodzielnie. Zatrzymaj narrację i poprowadź kreator postaci – zapytaj po kolei każdego gracza o imię, klasę, wygląd i cechy charakteru. Następnie samodzielnie wylosuj i podaj uproszczone statystyki.`;
     } else {
-      intro += `Gracze wybrali losowe postacie – stwórz je automatycznie.`;
+      intro += `Gracze wybrali losowe postacie. Stwórz je automatycznie i przedstaw narracyjnie.`;
     }
 
     if (campaignChoice === "Własna") {
-      intro += `Gracze chcą stworzyć własną kampanię. Poprowadź ich przez ten proces – zapytaj o klimat, cel, styl i świat.`;
+      intro += `Gracze chcą stworzyć własną kampanię. Przeprowadź ich przez proces – zapytaj o klimat świata, cel wyprawy i styl rozgrywki.`;
     } else {
-      intro += `Stwórz losową kampanię i zacznij narrację.`;
+      intro += `Stwórz losową kampanię i opisz ją narracyjnie.`;
     }
 
-    intro += ` Nie zaczynaj historii ani nie opisuj żadnych bohaterów, dopóki nie zakończysz procesu tworzenia postaci i kampanii zgodnie z wyborem gracza.`;
+    intro += ` Pamiętaj: nie używaj żadnych emotikonów ani punktorów. Nie stosuj list. Wszystko, co mówisz, musi brzmieć jak spójna narracja, gotowa do przeczytania na głos przez lektora.`;
 
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
