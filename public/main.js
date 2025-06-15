@@ -4,13 +4,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   const sendBtn = document.getElementById("send-btn");
   const micBtn = document.getElementById("mic-btn");
   const startBtn = document.getElementById("start-btn");
+  const statusIndicator = document.getElementById("status-indicator");
 
   let recognition;
   let recognitionAvailable = false;
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
 
-  // 🧑 Ask for username and login/register
+  // 🧑 Login lub rejestracja użytkownika
   async function getOrPromptUsername() {
     if (!username) {
       username = prompt("Podaj swoją nazwę gracza:");
@@ -122,6 +123,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (e.key === "Enter" && !isSpeaking) sendBtn.click();
   });
 
+  // 🎙️ Obsługa mikrofonu
   if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "pl-PL";
@@ -156,17 +158,20 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
+  // 🎲 Rozpocznij grę po kliknięciu start
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
+    // Ukryj formularz i pokaż interfejs gry
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
-    document.getElementById("chat-log").style.display = "block";
+    chatLog.style.display = "block";
     document.getElementById("controls").style.display = "flex";
     micBtn.style.display = "block";
+    statusIndicator.style.display = "block";
 
     const intro = `Rozpoczynamy grę! Graczy: ${playerCount}, poziom trudności: ${difficulty}. ` +
       `Postacie: ${characterChoice}, kampania: ${campaignChoice}.`;
