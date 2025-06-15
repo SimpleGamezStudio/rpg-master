@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpocznij grę — tylko jeden raz, bez duplikacji
+  // 🎲 Rozpocznij grę — z prośbą o rozpoczęcie przygody
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
@@ -180,10 +180,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     micBtn.style.display = "block";
     statusIndicator.style.display = "block";
 
-    const intro = `Rozpoczynamy grę! Graczy: ${playerCount}, poziom trudności: ${difficulty}. ` +
-      `Postacie: ${characterChoice}, kampania: ${campaignChoice}.`;
+    const intro = `Rozpoczynamy grę. Liczba graczy: ${playerCount}, poziom trudności: ${difficulty}, ` +
+      `postacie: ${characterChoice}, kampania: ${campaignChoice}. ` +
+      `Na podstawie tych ustawień rozpocznij kampanię — opisz pierwszy moment przygody, miejsce, nastrój, ` +
+      `oraz nadaj graczom imiona i powiedz, co widzą lub słyszą.`;
 
-    // Wyślij do GPT — pojawi się tylko jedna odpowiedź
     sendMessage(intro);
   });
 });
