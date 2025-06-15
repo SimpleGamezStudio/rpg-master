@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpocznij grę — z prośbą o rozpoczęcie przygody
+  // 🎲 Rozpocznij grę — bez pokazywania wiadomości gracza
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
@@ -185,6 +185,22 @@ document.addEventListener("DOMContentLoaded", async function () {
       `Na podstawie tych ustawień rozpocznij kampanię — opisz pierwszy moment przygody, miejsce, nastrój, ` +
       `oraz nadaj graczom imiona i powiedz, co widzą lub słyszą.`;
 
-    sendMessage(intro);
+    // ❗️Wyślij bez wyświetlania wiadomości użytkownika
+    fetch("https://rpg-master.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: intro, username })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.reply) {
+          appendMessage("gm", data.reply, data.audio);
+        }
+      })
+      .catch(err => {
+        console.error("Błąd komunikacji z serwerem:", err);
+        setInputEnabled(true);
+        isSpeaking = false;
+      });
   });
 });
