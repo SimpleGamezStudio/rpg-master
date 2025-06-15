@@ -10,51 +10,41 @@ body {
   height: 100vh;
 }
 
-.container {
-  width: 90%;
-  max-width: 800px;
-}
-
-.story-box,
-#chat-log {
-  background: rgba(0, 0, 0, 0.7);
-  border: 3px solid #856d4d;
-  padding: 20px;
-  height: 400px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  font-size: 1.2rem;
+#game-container {
+  width: 95%;
+  max-width: 900px;
+  background-color: #000000ee;
+  border: 2px solid #856d4d;
   border-radius: 10px;
-  margin-bottom: 15px;
-}
-
-#status-indicator {
-  font-size: 1rem;
-  color: #cfa976;
-  font-weight: bold;
-  text-align: center;
-  opacity: 0.7;
-  margin-bottom: 10px;
-  transition: opacity 0.3s ease;
-  display: none;
-}
-
-form,
-#controls {
-  margin-top: 10px;
+  padding: 30px;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  align-items: center;
 }
 
-input[type="text"],
-#user-input {
-  flex: 1;
+#setup-form {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 30px;
+}
+
+#setup-form label {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  color: #cfa976;
+}
+
+#setup-form input,
+#setup-form select {
+  width: 100%;
   padding: 10px;
+  margin-bottom: 20px;
   font-size: 1rem;
-  background: #333;
+  background: #222;
   color: #fff;
-  border: none;
-  border-radius: 4px;
+  border: 1px solid #555;
+  border-radius: 5px;
 }
 
 button,
@@ -86,7 +76,54 @@ input:disabled {
 #start-btn {
   width: 100%;
   font-size: 1.1rem;
-  margin-top: 20px;
+  margin-top: 10px;
+}
+
+#chat-log,
+#controls,
+#mic-btn,
+#status-indicator {
+  display: none;
+}
+
+#chat-log {
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid #856d4d;
+  padding: 20px;
+  height: 400px;
+  width: 100%;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 1.2rem;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+#status-indicator {
+  font-size: 1rem;
+  color: #cfa976;
+  font-weight: bold;
+  text-align: center;
+  opacity: 0.7;
+  margin-bottom: 10px;
+  transition: opacity 0.3s ease;
+}
+
+#controls {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+#user-input {
+  flex: 1;
+  padding: 10px;
+  font-size: 1rem;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
 }
 
 .message {
@@ -95,27 +132,4 @@ input:disabled {
 
 .message strong {
   color: #cfa976;
-}
-
-/* FORMULARZ USTAWIEŃ */
-#setup-form {
-  width: 100%;
-  margin-bottom: 20px;
-  color: #f4f4f4;
-  font-size: 1rem;
-}
-
-#setup-form label {
-  display: block;
-  margin-bottom: 10px;
-}
-
-#setup-form input,
-#setup-form select {
-  padding: 8px;
-  width: 100%;
-  background: #222;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 4px;
 }
