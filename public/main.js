@@ -5,11 +5,18 @@ document.addEventListener("DOMContentLoaded", async function () {
   const micBtn = document.getElementById("mic-btn");
   const startBtn = document.getElementById("start-btn");
   const statusIndicator = document.getElementById("status-indicator");
+  const controls = document.getElementById("controls");
 
   let recognition;
   let recognitionAvailable = false;
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
+
+  // Ukryj wszystko poza formularzem
+  chatLog.style.display = "none";
+  micBtn.style.display = "none";
+  controls.style.display = "none";
+  statusIndicator.style.display = "none";
 
   // 🧑 Login lub rejestracja użytkownika
   async function getOrPromptUsername() {
@@ -58,6 +65,23 @@ document.addEventListener("DOMContentLoaded", async function () {
       console.error("Błąd odtwarzania głosu:", err);
       callback?.();
     });
+  }
+
+  function speakText(text, callback) {
+    fetch("https://rpg-master.onrender.com/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    })
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        speakFromUrl(url, callback);
+      })
+      .catch(err => {
+        console.error("Błąd TTS:", err);
+        callback?.();
+      });
   }
 
   function appendMessage(sender, text, audioUrl = null) {
@@ -158,18 +182,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpocznij grę po kliknięciu start
+  // 🎲 Rozpoczęcie gry
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
-    // Ukryj formularz i pokaż interfejs gry
+    // Ukryj formularz, pokaż chat
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
     chatLog.style.display = "block";
-    document.getElementById("controls").style.display = "flex";
+    controls.style.display = "flex";
     micBtn.style.display = "block";
     statusIndicator.style.display = "block";
 
@@ -177,21 +201,24 @@ document.addEventListener("DOMContentLoaded", async function () {
       `Postacie: ${characterChoice}, kampania: ${campaignChoice}.`;
 
     appendMessage("user", intro);
-    fetch("https://rpg-master.onrender.com/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: intro, username })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.reply) {
-          appendMessage("gm", data.reply, data.audio);
-        }
+
+    speakText(intro, () => {
+      fetch("https://rpg-master.onrender.com/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: intro, username })
       })
-      .catch(err => {
-        console.error("Błąd komunikacji z serwerem:", err);
-        setInputEnabled(true);
-        isSpeaking = false;
-      });
+        .then(res => res.json())
+        .then(data => {
+          if (data.reply) {
+            appendMessage("gm", data.reply, data.audio);
+          }
+        })
+        .catch(err => {
+          console.error("Błąd komunikacji z serwerem:", err);
+          setInputEnabled(true);
+          isSpeaking = false;
+        });
+    });
   });
 });
