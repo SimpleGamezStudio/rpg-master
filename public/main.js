@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   let isSpeaking = false;
   let username = localStorage.getItem("rpgUsername");
 
-  // Hide everything except form
   chatLog.style.display = "none";
   micBtn.style.display = "none";
   controls.style.display = "none";
@@ -77,16 +76,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     const textContainer = div.querySelector(".text");
 
     animateText(textContainer, text, () => {
+      // 🔓 Odblokuj UI zaraz po animacji tekstu
+      if (controls.style.display === "none") {
+        controls.style.display = "flex";
+        micBtn.style.display = "block";
+      }
+      setInputEnabled(true);
+
       speakFromUrl(audioUrl, () => {
         isSpeaking = false;
-
-        // Re-enable input only after GM speaks first time
-        if (controls.style.display === "none") {
-          controls.style.display = "flex";
-          micBtn.style.display = "block";
-        }
-
-        setInputEnabled(true);
       });
     });
 
@@ -173,14 +171,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpoczęcie gry przez Mistrza Gry
+  // 🎲 Rozpocznij grę — skrócone intro i wcześniejsze odblokowanie inputu
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
     const characterChoice = document.getElementById("character-choice").value;
     const campaignChoice = document.getElementById("campaign-choice").value;
 
-    // Show game, hide form
     document.getElementById("setup-form").style.display = "none";
     startBtn.style.display = "none";
     chatLog.style.display = "block";
@@ -189,10 +186,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     statusIndicator.style.display = "block";
     setInputEnabled(false);
 
-    const intro = `Rozpoczynamy grę. Liczba graczy: ${playerCount}, poziom trudności: ${difficulty}, ` +
-      `postacie: ${characterChoice}, kampania: ${campaignChoice}. ` +
-      `Na podstawie tych ustawień rozpocznij kampanię — opisz pierwszy moment przygody, miejsce, nastrój, ` +
-      `oraz nadaj graczom imiona i powiedz, co widzą lub słyszą.`;
+    const intro = `Rozpocznij grę RPG dla ${playerCount} graczy na poziomie trudności "${difficulty}". ` +
+      `Gracze wybrali: ${characterChoice}, kampania: ${campaignChoice}. ` +
+      `Przywitaj ich krótkim wprowadzeniem i zadaj pytanie, co chcą zrobić jako pierwsze. Nie pisz zbyt długo.`;
 
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
