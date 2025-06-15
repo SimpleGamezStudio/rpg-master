@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Start gry z pełną logiką kreatora
+  // 🎲 Rozpocznij grę
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
@@ -185,26 +185,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     statusIndicator.style.display = "block";
     setInputEnabled(false);
 
-    let intro = `Rozpoczynamy grę RPG dla ${playerCount} graczy. Wybrany poziom trudności to "${difficulty}". `;
-
-    if (characterChoice === "Stworzymy własne") {
-      intro += `Gracze wybrali własnoręczne tworzenie postaci. Nie wolno ci wymyślać ani opisywać ich samodzielnie. Zatrzymaj narrację i poprowadź kreator postaci – zapytaj po kolei każdego gracza o imię, klasę, wygląd i cechy charakteru. Następnie samodzielnie wylosuj i podaj uproszczone statystyki.`;
-    } else {
-      intro += `Gracze wybrali losowe postacie. Stwórz je automatycznie i przedstaw narracyjnie.`;
-    }
-
-    if (campaignChoice === "Własna") {
-      intro += `Gracze chcą stworzyć własną kampanię. Przeprowadź ich przez proces – zapytaj o klimat świata, cel wyprawy i styl rozgrywki.`;
-    } else {
-      intro += `Stwórz losową kampanię i opisz ją narracyjnie.`;
-    }
-
-    intro += ` Pamiętaj: nie używaj żadnych emotikonów ani punktorów. Nie stosuj list. Wszystko, co mówisz, musi brzmieć jak spójna narracja, gotowa do przeczytania na głos przez lektora.`;
+    // 🧠 Tworzymy prompt w formie flag czytelnych dla systemu
+    const message = `Rozpoczynamy grę RPG.
+Liczba graczy: ${playerCount}.
+Poziom trudności: ${difficulty}.
+Postacie: ${characterChoice}.
+Kampania: ${campaignChoice}.
+Pamiętaj, nie używaj emotikonów ani list punktowanych. Wszystkie odpowiedzi mają mieć formę płynnej narracji gotowej do odczytu przez lektora.`;
 
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: intro, username })
+      body: JSON.stringify({ message, username })
     })
       .then(res => res.json())
       .then(data => {
