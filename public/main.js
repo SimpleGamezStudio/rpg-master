@@ -76,7 +76,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     const textContainer = div.querySelector(".text");
 
     animateText(textContainer, text, () => {
-      // 🔓 Odblokuj UI zaraz po animacji tekstu
       if (controls.style.display === "none") {
         controls.style.display = "flex";
         micBtn.style.display = "block";
@@ -171,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Rozpocznij grę — skrócone intro i wcześniejsze odblokowanie inputu
+  // 🎲 Start gry z obsługą tworzenia postaci i kampanii
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
@@ -186,9 +185,21 @@ document.addEventListener("DOMContentLoaded", async function () {
     statusIndicator.style.display = "block";
     setInputEnabled(false);
 
-    const intro = `Rozpocznij grę RPG dla ${playerCount} graczy na poziomie trudności "${difficulty}". ` +
-      `Gracze wybrali: ${characterChoice}, kampania: ${campaignChoice}. ` +
-      `Przywitaj ich krótkim wprowadzeniem i zadaj pytanie, co chcą zrobić jako pierwsze. Nie pisz zbyt długo.`;
+    let intro = `Rozpocznij grę RPG dla ${playerCount} graczy na poziomie trudności "${difficulty}". `;
+
+    if (characterChoice === "create") {
+      intro += `Gracze chcą stworzyć własne postacie. Przeprowadź ich przez ten proces – zapytaj o imiona, klasy, i inne szczegóły, a następnie wylosuj im uproszczone statystyki. `;
+    } else {
+      intro += `Wylosuj postacie dla graczy i przedstaw je w narracyjny sposób. `;
+    }
+
+    if (campaignChoice === "create") {
+      intro += `Gracze chcą stworzyć własną kampanię. Pomóż im wymyślić świat, temat, cel wyprawy oraz zadaj kilka pomocniczych pytań. `;
+    } else {
+      intro += `Wymyśl kampanię fabularnie i wprowadź graczy do niej krótkim, narracyjnym wstępem. `;
+    }
+
+    intro += `Po tym, jak postacie i kampania są gotowe, rozpocznij narrację i zadaj pytanie, co gracze robią jako pierwsze. Nie pisz zbyt długo.`;
 
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
