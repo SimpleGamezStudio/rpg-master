@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  // 🎲 Start gry z obsługą tworzenia postaci i kampanii
+  // 🎲 Start gry z twardym kreatorem
   startBtn.addEventListener("click", () => {
     const playerCount = document.getElementById("player-count").value;
     const difficulty = document.getElementById("difficulty").value;
@@ -187,19 +187,19 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     let intro = `Rozpocznij grę RPG dla ${playerCount} graczy na poziomie trudności "${difficulty}". `;
 
-    if (characterChoice === "create") {
-      intro += `Gracze chcą stworzyć własne postacie. Przeprowadź ich przez ten proces – zapytaj o imiona, klasy, i inne szczegóły, a następnie wylosuj im uproszczone statystyki. `;
+    if (characterChoice === "Stworzymy własne") {
+      intro += `Gracze wybrali własnoręczne tworzenie postaci. Nie wolno ci tworzyć postaci za nich. Musisz przeprowadzić kreator – zapytaj graczy o imię, klasę, wygląd i cechy. Potem wylosuj uproszczone statystyki.`;
     } else {
-      intro += `Wylosuj postacie dla graczy i przedstaw je w narracyjny sposób. `;
+      intro += `Gracze wybrali losowe postacie – stwórz je automatycznie.`;
     }
 
-    if (campaignChoice === "create") {
-      intro += `Gracze chcą stworzyć własną kampanię. Pomóż im wymyślić świat, temat, cel wyprawy oraz zadaj kilka pomocniczych pytań. `;
+    if (campaignChoice === "Własna") {
+      intro += `Gracze chcą stworzyć własną kampanię. Poprowadź ich przez ten proces – zapytaj o klimat, cel, styl i świat.`;
     } else {
-      intro += `Wymyśl kampanię fabularnie i wprowadź graczy do niej krótkim, narracyjnym wstępem. `;
+      intro += `Stwórz losową kampanię i zacznij narrację.`;
     }
 
-    intro += `Po tym, jak postacie i kampania są gotowe, rozpocznij narrację i zadaj pytanie, co gracze robią jako pierwsze. Nie pisz zbyt długo.`;
+    intro += ` Nie zaczynaj historii ani nie opisuj żadnych bohaterów, dopóki nie zakończysz procesu tworzenia postaci i kampanii zgodnie z wyborem gracza.`;
 
     fetch("https://rpg-master.onrender.com/chat", {
       method: "POST",
